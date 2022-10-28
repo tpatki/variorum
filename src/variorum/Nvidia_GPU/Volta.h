@@ -16,4 +16,6 @@ int volta_get_power_limits(int long_ver);
 
 int volta_get_gpu_utilization(int long_ver);
 
+int volta_get_power_json(char **get_power_obj_str);
+
 #endif
