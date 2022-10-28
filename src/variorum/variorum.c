@@ -1091,6 +1091,7 @@ int variorum_get_gpu_power_json(char **get_power_obj_str)
     if (err)
     {
         return -1;
+
     }
     err = variorum_exit(__FILE__, __FUNCTION__, __LINE__);
     if (err)
@@ -1124,6 +1125,7 @@ int variorum_print_available_frequencies(void)
         {
             return -1;
         }
+
     }
     err = variorum_exit(__FILE__, __FUNCTION__, __LINE__);
     if (err)
