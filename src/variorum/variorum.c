@@ -1062,18 +1062,18 @@ int variorum_get_gpu_power_json(char **get_power_obj_str)
         i = P_AMD_GPU_IDX;
         break;
 #endif
-// Deal with this later
-/*
-#ifdef VARIORUM_WITH_INTEL_GPU
-        i = P_INTEL_GPU_IDX;
-        break;
-#endif
-// Juno board is an exception, where we don't have a special GPU platform IDX.
-#ifdef VARIORUM_WITH_ARM_CPU
-        i = P_ARM_CPU_IDX;
-        break;
-#endif
-*/
+        // Deal with this later
+        /*
+        #ifdef VARIORUM_WITH_INTEL_GPU
+                i = P_INTEL_GPU_IDX;
+                break;
+        #endif
+        // Juno board is an exception, where we don't have a special GPU platform IDX.
+        #ifdef VARIORUM_WITH_ARM_CPU
+                i = P_ARM_CPU_IDX;
+                break;
+        #endif
+        */
     }
 
     if (g_platform[i].variorum_get_gpu_power_json == NULL)

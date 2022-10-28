@@ -233,7 +233,7 @@ struct platform
     ///
     /// @return Error code.
     int (*variorum_get_node_power_domain_info_json)(char **get_domain_obj_str);
-    
+
     /// @brief Function pointer to get JSON object for per-GPU power data.
     ///
     /// @return Error code.
