@@ -1125,7 +1125,6 @@ int variorum_print_available_frequencies(void)
         {
             return -1;
         }
-
     }
     err = variorum_exit(__FILE__, __FUNCTION__, __LINE__);
     if (err)
