@@ -17,10 +17,17 @@
 #endif
 
 /* Figure out the right spot for this at some point */
+static pthread_mutex_t mlock;
+struct thread_args th_args;
+pthread_attr_t mattr;
+pthread_t mthread;
+
+/*
 pthread_mutex_t mlock;
 struct thread_args th_args;
 pthread_attr_t mattr;
 pthread_t mthread;
+*/
 
 /* For the get_energy sampling thread */
 static int active_sampling = 0;
@@ -831,6 +838,15 @@ int ibm_cpu_p9_get_node_energy_json(json_t *get_energy_obj)
         /* Start power measurement thread. */
         pthread_attr_init(&mattr);
         pthread_attr_setdetachstate(&mattr, PTHREAD_CREATE_DETACHED);
+        printf("\n Variorum debug: Address for mlock is: %x \n", &mlock);
+        size_t sz = sizeof(mlock);
+        for (char* myl=(char*)(&mlock); myl < (((char*)&mlock) + sizeof(mlock)); myl++)
+        {
+            printf("QQQ %d: \n", *myl);
+        }
+        printf("\n Variorum debug: Sizeof for mlock is: %zu \n", sizeof(mlock));
+
+        printf("\n Variorum debug: Value for mlock is: %d \n", mlock);
         pthread_mutex_init(&mlock, NULL);
         pthread_create(&mthread, &mattr, power_measurement, NULL);
     }
@@ -839,9 +855,6 @@ int ibm_cpu_p9_get_node_energy_json(json_t *get_energy_obj)
         /* Stop power measurement thread. */
         active_sampling = 0;
 
-        /* Commenting out for now, results in invalid pointer and stack trace */
-        pthread_attr_destroy(&mattr);
-
         pthread_mutex_lock(&mlock);
 
         /* Only set node_energy for now */
@@ -849,6 +862,9 @@ int ibm_cpu_p9_get_node_energy_json(json_t *get_energy_obj)
                             json_integer(th_args.energy_acc));
 
         pthread_mutex_unlock(&mlock);
+
+        pthread_attr_destroy(&mattr);
+        pthread_mutex_destroy(&mlock);
     }
 
     return 0;

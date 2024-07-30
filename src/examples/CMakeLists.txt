@@ -46,11 +46,13 @@ set(BASIC_EXAMPLES
     variorum-print-verbose-power-example
     variorum-print-verbose-power-limit-example
     variorum-print-verbose-thermals-example
+    energy-variorum-integration-using-json-example
 )
 
 message(STATUS "Adding variorum examples")
 foreach(EXAMPLE ${BASIC_EXAMPLES})
     message(STATUS " [*] Adding example: ${EXAMPLE}")
+    set(CMAKE_C_FLAGS "-fsanitize=address")
     add_executable(${EXAMPLE} ${EXAMPLE}.c)
     target_link_libraries(${EXAMPLE} variorum ${variorum_deps})
 endforeach()

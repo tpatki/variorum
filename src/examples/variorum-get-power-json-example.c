@@ -63,6 +63,8 @@ int main(int argc, char **argv)
 
     /* Print the entire JSON object */
     puts(s);
+    free(s);
+
 
 #ifdef SECOND_RUN
     for (i = 0; i < size; i++)
@@ -78,7 +80,7 @@ int main(int argc, char **argv)
         exit(-1);
     }
 
-    /* Print the entire JSON object */
+    // Print the entire JSON object
     puts(s);
 #endif
 

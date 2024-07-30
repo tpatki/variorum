@@ -38,6 +38,9 @@ set(variorum_includes
     ${ESMI_INCLUDE_DIRS}
 )
 
+set(CMAKE_C_FLAGS "-fsanitize=address")
+#set(CMAKE_LINKER_FLAGS "-fsanitize=address")
+
 if(VARIORUM_WITH_INTEL_CPU)
     add_subdirectory(msr)
     list(APPEND variorum_includes ${CMAKE_CURRENT_SOURCE_DIR}/msr)
@@ -123,7 +126,7 @@ else()
                 ${variorum_deps})
 endif()
 
-
+target_link_libraries(variorum PUBLIC "-fsanitize=address")
 target_link_libraries(variorum PUBLIC ${HWLOC_LIBRARY})
 target_link_libraries(variorum PUBLIC ${JANSSON_LIBRARY})
 target_link_libraries(variorum PUBLIC m)
