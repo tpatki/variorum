@@ -1605,7 +1605,7 @@ int variorum_print_energy(void)
                                        __FUNCTION__, __LINE__);
                 return 0;
             }
-            err = g_platform[i].variorum_print_energy(0);
+                err = g_platform[i].variorum_print_energy(0);
             if (err)
             {
                 return -1;

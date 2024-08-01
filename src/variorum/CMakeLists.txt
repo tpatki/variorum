@@ -39,7 +39,6 @@ set(variorum_includes
 )
 
 set(CMAKE_C_FLAGS "-fsanitize=address")
-#set(CMAKE_LINKER_FLAGS "-fsanitize=address")
 
 if(VARIORUM_WITH_INTEL_CPU)
     add_subdirectory(msr)

@@ -47,6 +47,7 @@ set(BASIC_EXAMPLES
     variorum-print-verbose-power-limit-example
     variorum-print-verbose-thermals-example
     energy-variorum-integration-using-json-example
+    tre-test
 )
 
 message(STATUS "Adding variorum examples")

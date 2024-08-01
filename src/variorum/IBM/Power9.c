@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <string.h>
 
 #include <config_architecture.h>
 #include <Power9.h>
@@ -17,7 +18,8 @@
 #endif
 
 /* Figure out the right spot for this at some point */
-static pthread_mutex_t mlock;
+// static pthread_mutex_t mlock;
+pthread_mutex_t mlock; // = PTHREAD_MUTEX_INITIALIZER;
 struct thread_args th_args;
 pthread_attr_t mattr;
 pthread_t mthread;
@@ -664,21 +666,22 @@ int ibm_cpu_p9_get_node_frequency_json(json_t *get_frequency_obj_json)
 int ibm_cpu_p9_get_energy(int long_ver)
 {
     static int init = 0;
-    char hostname[1024];
-    static struct timeval start;
-    struct timeval now;
+//    char hostname[1024];
+ //   static struct timeval start;
+//    struct timeval now;
 
-    gethostname(hostname, 1024);
+  //  gethostname(hostname, 1024);
 
     if (!init)
     {
         init = 1;
-        gettimeofday(&start, NULL);
-
+    //    gettimeofday(&start, NULL);
+/*
         if (long_ver == 0)
         {
             printf("_IBMENERGY Host AccumulatedEnergy_J Timestamp_sec\n");
-        }
+        } */
+
     }
 
     /* Enter the function the first time */
@@ -686,12 +689,15 @@ int ibm_cpu_p9_get_energy(int long_ver)
     {
         active_sampling = 1;
 
-        gettimeofday(&now, NULL);
+//        gettimeofday(&now, NULL);
 
         /* Sampling interval is hardcoded at 250ms */
-        th_args.sample_interval = 250;
-        th_args.energy_acc = 0;
+//        th_args.sample_interval = 250;
+ //       th_args.energy_acc = 0;
+ //       printf("\n Variorum debug: Sizeof th_args is: %zu \n", sizeof(th_args));
 
+        // WTF is leaking 608 bytes of memory?
+/*
         if (long_ver)
         {
             printf("_IBMENERGY Host: %s, Accumulated Energy: %lu J, Timestamp: %lf sec\n",
@@ -700,29 +706,33 @@ int ibm_cpu_p9_get_energy(int long_ver)
         }
         else
         {
-            /* The first call should print zero as energy. */
+            // The first call should print zero as energy.
             printf("%s %s %lu %lf\n",
                    "_IBMENERGY", hostname, th_args.energy_acc,
                    now.tv_sec - start.tv_sec + (now.tv_usec - start.tv_usec) / 1000000.0);
         }
+*/
 
         /* Start power measurement thread. */
         pthread_attr_init(&mattr);
         pthread_attr_setdetachstate(&mattr, PTHREAD_CREATE_DETACHED);
+        printf("\n Variorum debug: Sizeof mattr is: %zu \n", sizeof(mattr));
+        printf("\n Variorum debug: Sizeof mthread is: %zu \n", sizeof(mthread));
         pthread_mutex_init(&mlock, NULL);
         pthread_create(&mthread, &mattr, power_measurement, NULL);
+        // pthread_create(&mthread, NULL, power_measurement, NULL);
+        printf("\n Variorum debug: Main thread continues...\n");
     }
     else
     {
         /* Stop power measurement thread. */
         active_sampling = 0;
 
-        gettimeofday(&now, NULL);
+     //   gettimeofday(&now, NULL);
 
-        pthread_attr_destroy(&mattr);
 
         pthread_mutex_lock(&mlock);
-        if (long_ver)
+      /*  if (long_ver)
         {
             printf("_IBMENERGY Host: %s, Accumulated Energy: %lu J, Timestamp: %lf sec\n",
                    hostname, th_args.energy_acc,
@@ -733,13 +743,25 @@ int ibm_cpu_p9_get_energy(int long_ver)
             printf("%s %s %lu %lf\n",
                    "_IBMENERGY", hostname, th_args.energy_acc,
                    now.tv_sec - start.tv_sec + (now.tv_usec - start.tv_usec) / 1000000.0);
-        }
+        } */
         pthread_mutex_unlock(&mlock);
+
+
+        pthread_attr_destroy(&mattr);
+        pthread_mutex_destroy(&mlock);
+
     }
 
     return 0;
 }
 
+unsigned long take_measurement(int fd)
+{
+    printf("IN TAKE_MSMT\n");
+    unsigned long power_sample = 386;
+}
+
+/*
 unsigned long take_measurement(int fd)
 {
     unsigned long power_sample = 0;
@@ -755,7 +777,7 @@ unsigned long take_measurement(int fd)
     int bytes;
     unsigned iter = 0;
 
-    /* We assume that socket 0 on IBM Power9 reports total system power */
+    //We assume that socket 0 on IBM Power9 reports total system power
     lseek(fd, iter * OCC_SENSOR_DATA_BLOCK_SIZE, SEEK_SET);
 
     buf = malloc(OCC_SENSOR_DATA_BLOCK_SIZE);
@@ -787,14 +809,37 @@ unsigned long take_measurement(int fd)
     free(buf);
     return power_sample;
 }
+*/
 
+void cleanup_bg_pthread(void)
+{
+
+   pthread_attr_destroy(&mattr);
+   pthread_mutex_destroy(&mlock);
+   pthread_exit(NULL);
+
+}
+
+void *power_measurement(void *arg)
+{
+
+    printf("IN PWR_MSMT, CALLING TAKE_MSMT\n");
+
+    unsigned long curr_measurement = take_measurement(0);
+
+    th_args.energy_acc += curr_measurement;
+
+
+    atexit(cleanup_bg_pthread);
+}
+/*
 void *power_measurement(void *arg)
 {
     struct mstimer timer;
     unsigned long curr_measurement;
     int fd;
 
-    /* Open inband_sensors file */
+   //   Open inband_sensors file
     fd = open("/sys/firmware/opal/exports/occ_inband_sensors", O_RDONLY);
     if (fd < 0)
     {
@@ -805,37 +850,39 @@ void *power_measurement(void *arg)
         init_msTimer(&timer, th_args.sample_interval);
 
         timer_sleep(&timer);
+        printf("\n Entering POW_MSMT with active_sampling = %d\n", active_sampling);
         while (active_sampling)
         {
-            /* Accummulate energy */
+     //        Accummulate energy
             pthread_mutex_lock(&mlock);
             curr_measurement = take_measurement(fd);
             th_args.energy_acc += curr_measurement * th_args.sample_interval;
             pthread_mutex_unlock(&mlock);
             timer_sleep(&timer);
         }
-        /* Close inband_sensors file */
+       //  Close inband_sensors file
         close(fd);
     }
     return arg;
 }
+*/
 
 int ibm_cpu_p9_get_node_energy_json(json_t *get_energy_obj)
 {
-    /* Enter the function the first time */
-    if (active_sampling == 0)
+   printf("\n Entering CPU_GET_NODE_ENERGY with active_sampling = %d\n", active_sampling);
+
+      printf("Address of mlock is %#p.\n", &mlock);
+      memset(&mlock, '\0', 1);
+/*    if (active_sampling == 0)
     {
         active_sampling = 1;
 
-        /* Sampling interval is hardcoded at 250ms */
         th_args.sample_interval = 250;
         th_args.energy_acc = 0;
 
-        /* Only set node_energy for now */
         json_object_set_new(get_energy_obj, "energy_node_joules",
                             json_integer(th_args.energy_acc));
 
-        /* Start power measurement thread. */
         pthread_attr_init(&mattr);
         pthread_attr_setdetachstate(&mattr, PTHREAD_CREATE_DETACHED);
         printf("\n Variorum debug: Address for mlock is: %x \n", &mlock);
@@ -845,27 +892,26 @@ int ibm_cpu_p9_get_node_energy_json(json_t *get_energy_obj)
             printf("QQQ %d: \n", *myl);
         }
         printf("\n Variorum debug: Sizeof for mlock is: %zu \n", sizeof(mlock));
-
         printf("\n Variorum debug: Value for mlock is: %d \n", mlock);
-        pthread_mutex_init(&mlock, NULL);
+
         pthread_create(&mthread, &mattr, power_measurement, NULL);
+
+        pthread_mutex_init(&mlock, NULL);
     }
     else
     {
-        /* Stop power measurement thread. */
         active_sampling = 0;
 
         pthread_mutex_lock(&mlock);
 
-        /* Only set node_energy for now */
         json_object_set_new(get_energy_obj, "energy_node_joules",
                             json_integer(th_args.energy_acc));
 
         pthread_mutex_unlock(&mlock);
-
         pthread_attr_destroy(&mattr);
         pthread_mutex_destroy(&mlock);
     }
-
+*/
     return 0;
+
 }
